@@ -1,0 +1,30 @@
+{
+  "name": "Team Famille — quêtes & XP",
+  "short_name": "Team Famille",
+  "description": "Application famille pour le vélo, la course, la natation et le renforcement : XP, quêtes hebdomadaires, défis mensuels et badges. Aucune donnée ne quitte l'appareil.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#0b0f24",
+  "theme_color": "#0b0f24",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Noter une séance", "short_name": "Séance", "url": "./#log", "description": "Enregistrer une sortie ou un entraînement", "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }] },
+    { "name": "Ma pesée", "short_name": "Pesée", "url": "./#weigh", "description": "Noter le poids du jour", "icons": [{ "src": "./icon-192.png", "sizes": "192x192" }] }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "params": { "title": "t", "text": "d" }
+  }
+}
