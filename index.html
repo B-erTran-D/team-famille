@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0f24">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Team Famille">
@@ -405,7 +407,7 @@ function save(){
   if(!LSOK)return;
   if(!lsSet(JSON.stringify(STATE)))toast("⚠️ Sauvegarde impossible ici","Ouvre l'app depuis son adresse web (après installation) pour tout garder.");
 }
-function ap(){return STATE.profiles.find(x=>x.id===STATE.active)||null;}
+function ap(){if(!STATE||!Array.isArray(STATE.profiles))return null;return STATE.profiles.find(x=>x.id===STATE.active)||null;}
 function uid(){return "p"+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3);}
 function newProfile(name,emoji,sport,extra){
   const p={
@@ -1564,9 +1566,10 @@ function schedule(v){
 if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
   window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});
 }
-if("Notification" in window){
+function bootReminders(){
+  if(!("Notification" in window))return;
   const p=ap();
-  if(p&&p.settings&&p.settings.remind&&Notification.permission==="granted")schedule(p.settings.remind);
+  try{if(p&&p.settings&&p.settings.remind&&Notification.permission==="granted")schedule(p.settings.remind);}catch(e){}
 }
 window.addEventListener("beforeinstallprompt",function(e){
   e.preventDefault();
@@ -1592,6 +1595,8 @@ if(STATE.profiles.length){
 }
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closeEd();});
 render();
+bootReminders();
+bootReminders();
 </script>
 </body>
 </html>
