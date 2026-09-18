@@ -9,6 +9,46 @@
 <meta name="apple-mobile-web-app-title" content="Team Famille">
 <meta name="description" content="App famille : XP, quêtes et badges pour le vélo, la course, la natation et le renforcement. Données 100% locales, sans compte.">
 <title>Team Famille — quêtes &amp; XP</title>
+<script>
+/* Filet de securite : si le script principal casse (y compris une erreur de syntaxe,
+   signalee avant que le DOM soit pret), on affiche l'erreur au lieu de laisser un ecran
+   vide. Diagnostic complet dans la console (F12) : tfCheck() */
+window.__tfErr=null;
+function tfShow(){
+  if(!window.__tfErr)return;
+  var v=document.getElementById("view");
+  if(!v)return;
+  if(v.querySelector("[data-tferr]"))return;
+  function mk(t,c,x){var n=document.createElement(t);if(c)n.className=c;if(x)n.textContent=x;return n;}
+  var card=mk("div","card");card.setAttribute("data-tferr","1");
+  var h2=mk("h2");h2.appendChild(mk("span","","Oups"));card.appendChild(h2);
+  card.appendChild(mk("p","mut","Le script de l'app n'a pas pu demarrer dans ce navigateur. Voici ce qu'il signale :"));
+  var err=mk("p","","\u26a0 "+window.__tfErr);
+  err.style.cssText="margin:0 0 10px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#ff6b9d;word-break:break-word";
+  card.appendChild(err);
+  card.appendChild(mk("p","tiny mut","Cause la plus frequente : la page est ouverte dans le navigateur integre d'une application (apercu d'un lien, messagerie, autre site), ou un bloqueur / une extension desactive le JavaScript. Ouvre l'adresse dans une vraie fenetre de Chrome, Edge, Safari ou Firefox, puis F12 onglet Console."));
+  var b=mk("button","pri","Recharger");b.onclick=function(){location.reload();};card.appendChild(b);
+  v.appendChild(card);
+}
+window.addEventListener("error",function(e){
+  window.__tfErr=(e&&e.message?e.message:"erreur")+(e&&e.lineno?" (ligne "+e.lineno+")":"");
+  tfShow();
+  setTimeout(tfShow,0);
+  document.addEventListener("DOMContentLoaded",tfShow);
+  window.addEventListener("load",tfShow);
+});
+window.tfCheck=function(){
+  var d={};
+  try{d["script execute"]=(typeof render==="function");}catch(e){d["script execute"]=false;}
+  try{d["STATE charge"]=!!(typeof STATE!=="undefined"&&STATE&&STATE.profiles);}catch(e){d["STATE charge"]=false;}
+  try{d["profils"]=(typeof STATE!=="undefined"&&STATE)?STATE.profiles.length:"-";}catch(e){}
+  try{d["localStorage"]=(typeof localStorage!=="undefined"&&localStorage!==null);}catch(e){d["localStorage"]="bloque";}
+  try{d["serviceWorker"]=("serviceWorker" in navigator);}catch(e){}
+  try{d["manifest"]=(typeof document!=="undefined")&&!!document.querySelector('link[rel="manifest"]');}catch(e){}
+  d["erreur capturée"]=window.__tfErr||"aucune";
+  console.table(d);return d;
+};
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -20,6 +60,7 @@
   --r:16px; --pad:14px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.nb{margin:24px auto;max-width:640px;background:#141a35;border:1px solid #2a3566;border-radius:16px;padding:18px;color:#e8edff;font:600 15px/1.5 system-ui,sans-serif}
 html,body{margin:0;padding:0}
 body{
   background:radial-gradient(1200px 600px at 20% -10%,#1b2450 0%,transparent 60%),
@@ -134,6 +175,7 @@ details summary{cursor:pointer}
 </style>
 </head>
 <body>
+<noscript><div class="nb">Le JavaScript est bloqué dans ce navigateur : l'app ne peut pas fonctionner. Ouvre l'adresse dans une vraie fenêtre de Chrome, Edge, Safari ou Firefox, et désactive le bloqueur de scripts pour ce site.</div></noscript>
 <header class="top"><div class="wrap">
   <div class="brand">🚴 Team Famille <small id="hdrsub">quêtes &amp; XP</small></div>
   <div class="who" id="who"></div>
