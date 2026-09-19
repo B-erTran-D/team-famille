@@ -5,7 +5,7 @@
    ------------------------------------------------------------------
    ⚠️ Quand tu modifies index.html, change CACHE_VERSION ci-dessous
    (par ex. tf-2026-09-18b) sinon le téléphone gardera l'ancienne version. */
-const CACHE_VERSION = "tf-2026-09-18f";
+const CACHE_VERSION = "tf-2026-09-18g";
 const ASSETS = [
   "./",
   "./index.html",

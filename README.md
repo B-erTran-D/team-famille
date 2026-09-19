@@ -102,6 +102,12 @@ Côté renforcement, c'est « 10 jours d'élastique », « 200 squats », « 30 
 
 Chacun déclare **ses créneaux réels** (15, 20, 30, 45, 60, 90 min) et **son style** — « très court et intense (HIIT) », « mélange » ou « long et doux ». Le catalogue de séances se re-trie en conséquence : à un cycliste qui n'a que 20 minutes et aime souffrir peu de temps, on propose des Tabata et des 30/30 ; à une maman qui veut du doux, on propose mobilité et élastique, jamais du fractionné en tête de liste. Si aucune séance ne tient dans le créneau, l'app le dit au lieu de faire semblant.
 
+### Le menu du bas ne mange plus le bas de la page
+
+Le menu (Aujourd’hui • Séances • Duel • Mission • Badges • Famille) est collé en bas de l’écran, comme dans une vraie app. Le vide qui le sépare du contenu n’est **plus un chiffre supposé dans le CSS** : à chaque fois que la barre change de taille (téléphone différent, texte agrandi par les réglages d’accessibilité, paysage, encoche), l’app **mesure sa hauteur réelle** et reporte la valeur dans la variable CSS `--tabpad`, que le bas de page utilise. Les six onglets tiennent d’ailleurs sur **une seule rangée** (ils étaient 6 dans une grille de 5 cases : deux rangées, et ~54 px de contenu caché définitivement sous la barre).
+
+Un libellé trop long est tronqué avec des points de suspension et garde son **texte complet en info-bulle** (`title`). Si un jour le dégagement te semble encore court : écris dans la console `syncTabH()` et la mesure se refait.
+
 ### Chacun choisit son prénom (ou son surnom)
 
 Le champ **Prénom ou surnom** est la première question de l''éditeur de profil : c''est toi qui l''écris. « Maman », « Papa », « Léa » ne sont que des **pastilles de suggestion** sous le champ — un tap les copie dans la case, tu peux aussi taper ce que tu veux (« Julie », « Coco », « Maman-Course »…).
