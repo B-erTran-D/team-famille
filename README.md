@@ -102,6 +102,32 @@ Côté renforcement, c'est « 10 jours d'élastique », « 200 squats », « 30 
 
 Chacun déclare **ses créneaux réels** (15, 20, 30, 45, 60, 90 min) et **son style** — « très court et intense (HIIT) », « mélange » ou « long et doux ». Le catalogue de séances se re-trie en conséquence : à un cycliste qui n'a que 20 minutes et aime souffrir peu de temps, on propose des Tabata et des 30/30 ; à une maman qui veut du doux, on propose mobilité et élastique, jamais du fractionné en tête de liste. Si aucune séance ne tient dans le créneau, l'app le dit au lieu de faire semblant.
 
+### Chacun choisit son prénom (ou son surnom)
+
+Le champ **Prénom ou surnom** est la première question de l''éditeur de profil : c''est toi qui l''écris. « Maman », « Papa », « Léa » ne sont que des **pastilles de suggestion** sous le champ — un tap les copie dans la case, tu peux aussi taper ce que tu veux (« Julie », « Coco », « Maman-Course »…).
+
+- **Le prénom est obligatoire** (sinon le classement et le duel ne sauraient pas à qui attribuer les points) : si tu valides sans rien écrire, l''app ne crée rien et te repose la question, sans message rouge ni drame.
+- **18 caractères maximum**, pour que le classement tienne sur une ligne.
+- **Pas de doublon** : la comparaison ignore les majuscules et les accents (« Julie » = « julie »), et l''app te demande d''en changer un. À l''import d''une base, deux homonymes sont numérotés (« Papa 2 ») plutôt que fusionnés par erreur.
+- Les préréglages famille (`👩 Maman en 1 clic`) **laissent la case vide** exprès : rien n''est collé dans son dossier.
+
+### Un objectif de poids par profil (et aucun si tu n’en veux pas)
+
+Chaque profil a **son propre** objectif : type (kg, km ou minutes), valeur de départ, valeur actuelle, cible, date de début, échéance. Ça se règle dans **Famille ▸ Éditer**, et c’est la même fenêtre qui crée un profil : l’app demande donc le poids de départ à qui choisit « Perdre du poids (kg) » — elle ne le devine jamais.
+
+- **Rien n’est obligatoire.** Laisse le départ vide : l’app continue de compter les séances, les quêtes, les badges et le niveau, sans jamais regarder la balance. Le classement famille, lui, est toujours en **minutes**, jamais en kilos.
+- **Pendant la saisie**, une ligne calcule l’allure : « 6 kg en 32 semaines = 0,19 kg par semaine · allure confortable ». C’est une droite de progression, pas un verdict.
+- **Le poids de départ du premier profil** (le tien) est pré-rempli depuis un bloc repérable en tête du `index.html` :
+
+```js
+/* ⚠️  À PERSONNALISER */
+const PROFIL_DEFAUT={name:"Papa",emoji:"🚴",sport:"velo",
+  times:[20,30,45],int:"hiit",weeklyMin:150,
+  kg:{start:87,target:72,until:"2027-04-30"}};
+```
+
+Change ces chiffres (ou passe `start:null` pour que l’app redemande le poids à chaque création). Les préréglages famille — `Maman en 1 clic` sur l’écran d’accueil —, eux, **laissent toujours le poids vierge** : c’est à chacun de saisir le sien.
+
 ### Ton objectif, en chiffres
 
 Départ 87 kg le 18/09/2026 → cible 72 kg le 30/04/2027 = **32 semaines, 0,47 kg par semaine**.
@@ -141,6 +167,17 @@ Et si un jour l'automatisation totale (les codes qui circulent seuls) te tente, 
 - **Le HIIT : 1 à 2 séances par semaine maximum.** C'est efficace et court, c'est pour ça qu'on en voudrait tous les jours.
 - **Une pesée par semaine**, le même jour, au réveil, à jeun. Un +1 kg le lendemain d'une crêpe, c'est de l'eau : seul le trend du mois compte.
 - **Les heures de selle valent plus que la balance.** Si une semaine est blanche, l'objectif n'est pas de « rattraper » par deux heures de vélo en punition, mais d'être là la semaine suivante.
+
+## Écran vide ? Ce qu’il faut savoir
+
+Si l’adresse s’ouvre sur un bandeau sombre sans rien dessous, l’app affiche désormais une carte « **Oups** » avec le message d’erreur exact de Chrome (au lieu d’un écran muet). Les deux causes possibles, dans l’ordre :
+
+1. **une extension bloque les scripts inline** sur ce site → ajouter `ton-domaine.github.io` à la liste blanche, ou tester en navigation privée (extensions désactivées) ;
+2. **la page est ouverte dans un navigateur intégré** (aperçu d’un lien, messagerie, navigateur d’un autre site) → copier l’adresse et la coller dans une vraie fenêtre de Chrome, Safari, Edge ou Firefox.
+
+Diagnostic complet dans la console (F12) en tapant `tfCheck()` : ça répond si le script a tourné, si les données sont chargées, si le manifeste et le service worker sont là.
+
+Note pour iPhone : l’app reste stockée dans le navigateur **de chaque téléphone**. Une sauvegarde mensuelle par « Exporter en fichier » (onglet Famille) reste le seul vrai garde-fou.
 
 ## Contenu du dossier
 

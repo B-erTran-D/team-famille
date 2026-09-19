@@ -95,6 +95,8 @@ Le même lien marche partout. Si l'installation n'est pas proposée, un simple f
 
 ## C. Ce qu'il faut savoir (honnêtement)
 
+- **Avant de téléverser, personnalise ton objectif.** En tête de `index.html`, le bloc `const PROFIL_DEFAUT={...}` (kg de départ, cible, échéance, minutes/semaine) ne sert qu''au premier profil créé par « Commencer par moi » : mets tes chiffres ou passe `start:null` pour que l''app les demande. **Les autres membres ne reçoivent aucun poids** : le préréglage `👩 Maman en 1 clic` ouvre son éditeur avec les cases vides, c''est elle qui remplit — ou qui laisse vide, l''app compte alors séances, quêtes et badges sans jamais parler de balance.
+- **Le prénom, c’est chacun qui l’écrit.** Les préréglages (`👩 Maman en 1 clic`) ouvrent l’éditeur avec la case **vide** : « Maman » n’est qu’une suggestion en un tap, elle met son prénom, un surnom, ce qu’elle veut. Seules règles : un prénom court (18 caractères max) et unique dans la maison — l’app refuse deux « Julie » (majuscules et accents ignorés), sinon le classement et le duel ne sauraient plus qui est qui.
 - **Chaque téléphone a sa propre base.** Rien n'est synchronisé tout seul, c'est voulu (zéro serveur, zéro compte). Pour partager une base famille sur un seul appareil, ou la sauvegarder : onglet **Famille → Exporter en fichier** (un `.json`), ou « Copier le code » à coller sur l'autre appareil (l'import fusionne, il n'écrase pas).
 - **L'app fonctionne hors connexion** une fois ouverte au moins une fois avec l'icône (le service worker a mis la page en cache).
 - **Mise à jour de l'app plus tard** : étape A.3 (upload des nouveaux fichiers) → les téléphones rattrapent la version au prochain lancement. Si un téléphone reste bloqué sur l'ancienne : fermer l'app et la rouvrir, ou fermer l'onglet Safari/Chrome et recharger.
@@ -112,5 +114,6 @@ Le même lien marche partout. Si l'installation n'est pas proposée, un simple f
 | L'icône n'apparaît pas | Safari utilisé sur Android, Chrome utilisé sur iPhone | Android → Chrome. iPhone → Safari |
 | L'app est vide sur un 2ᵉ téléphone | normal : la base vit dans chaque navigateur | Créer les profils sur chaque téléphone, ou importer le code/export famille |
 | Vieille version affichée après une mise à jour | cache du service worker | Fermer complètement l'app, rouvrir ; en dernier recours vider les données du site dans les réglages du navigateur |
+| Bandeau sombre vide, puis carte « Oups » | extension qui bloque les scripts, ou page ouverte dans le navigateur intégré d'une app | Navigation privée (extensions coupées), ou copier l'adresse dans une vraie fenêtre de Chrome/Safari. F12 → Console → taper `tfCheck()` |
 
 Pour vérifier qu'une adresse est bien servie, colle-la dans un onglet : la racine doit renvoyer la page de l'app (pas un 404 GitHub), et `/manifest.webmanifest` doit afficher du JSON.

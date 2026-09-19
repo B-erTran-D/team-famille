@@ -409,9 +409,12 @@ function save(){
 }
 function ap(){if(!STATE||!Array.isArray(STATE.profiles))return null;return STATE.profiles.find(x=>x.id===STATE.active)||null;}
 function uid(){return "p"+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3);}
+function normName(n){return String(n||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");}
+function suggestName(n){var b=String(n||"").trim();if(!b)return "Sans nom";var i=1,cur=b;while((STATE&&STATE.profiles||[]).some(function(p){return normName(p.name)===normName(cur);})){i++;cur=b+" "+i;}return cur;}
+function nameProblem(n,skipId){var t=String(n||"").trim();if(!t)return "empty";if(t.length>18)return "long";var k=normName(t);if((STATE&&STATE.profiles||[]).some(function(p){return String(p.id)!==String(skipId)&&normName(p.name)===k;}))return "dup";return "";}
 function newProfile(name,emoji,sport,extra){
   const p={
-    id:uid(),name:name||"Coureur",emoji:emoji||"⭐",sport:sport||"velo",active:true,
+    id:uid(),name:name||"",emoji:emoji||"⭐",sport:sport||"velo",active:true,
     settings:{pref:{times:[30,45,60],int:"mix",pool:25},joker:{used:0,week:curWeek()},remind:null},
     track:DEFHABITS.slice(0,3).map(h=>({key:h.k,lab:h.t})),
     goal:{metric:"kg",start:null,curr:null,target:null,startD:today(),targetD:"2027-04-30",weeklyMin:120,unit:"kg"},
@@ -420,6 +423,37 @@ function newProfile(name,emoji,sport,extra){
     badges:[],quests:{},questW:curWeek(),xp:0,lvl:0,bestWeek:0,bestLost:0,demo:false,createdAt:today()
   };
   if(extra)Object.assign(p.extra={},extra);
+  return p;
+}
+
+/* ============================================================ PROFIL PAR DÉFAUT
+   ⚠️  À PERSONNALISER : ces valeurs sont celles du premier profil (« Commencer
+   par moi »). Ce ne sont PAS des constantes cachées au fond du fichier : chaque
+   membre saisit les siennes dans son éditeur de profil, et rien n'est imposé
+   aux autres. Mets tes chiffres ici, ou laisse le champ vide : l'app redemande.
+   Les prénoms des préréglages famille, eux, ne sont que des suggestions : chacun
+   choisit son prénom ou son surnom dans l'éditeur de profil (champ vide = on le demande). */
+const PROFIL_DEFAUT={name:"Papa",emoji:"🚴",sport:"velo",
+  times:[20,30,45],int:"hiit",weeklyMin:150,
+  kg:{start:87,target:72,until:"2027-04-30"}};
+const PRESET_FAM={
+  maman:{name:"Maman",emoji:"💪",sport:"renf",times:[15,20,30],int:"easy",weeklyMin:70},
+  enfant:{name:"Léa",emoji:"🏊",sport:"natation",times:[20,30],int:"mix",weeklyMin:90},
+  ado:{name:"Tim",emoji:"🏃",sport:"course",times:[15,20,30],int:"hiit",weeklyMin:80}
+};
+function famPreset(k){
+  const src=(k==="moi"?PROFIL_DEFAUT:PRESET_FAM[k])||{};
+  const p=newProfile(src.name||"Papa",src.emoji||"⭐",src.sport||"velo");
+  if(src.times)p.settings.pref.times=src.times.slice();
+  if(src.int)p.settings.pref.int=src.int;
+  if(src.weeklyMin)p.goal.weeklyMin=src.weeklyMin;
+  if(k==="moi"&&PROFIL_DEFAUT.kg&&PROFIL_DEFAUT.kg.start!=null){
+    const g=PROFIL_DEFAUT.kg;
+    p.goal.metric="kg";p.goal.start=g.start;p.goal.curr=g.start;p.goal.target=g.target;
+    p.goal.unit="kg";if(g.until)p.goal.targetD=g.until;
+    p.weights=[{date:today(),kg:g.start}];
+    p.demo=true;
+  }
   return p;
 }
 
@@ -724,8 +758,11 @@ function render(){
 function vWelcome(){
   return '<div class="card"><h2><span>Bienvenue</span></h2>'
   +'<p class="mut" style="margin:0">Crée ton profil : sport, préférences de séances, objectif. Puis ajoute Maman, Léa, Tim… Chacun a ses quêtes, sa courbe, ses badges et son niveau.</p>'
+  +'<p class="tiny mut" style="margin:8px 0 0"><b>Chacun son objectif de poids, et son poids de départ.</b> Rien n’est imposé : l’éditeur de profil demande prénom, sport, créneaux, style, valeur de départ et échéance. Et si tu ne veux pas suivre ton poids, tu choisis « km » ou « minutes » à la place — la courbe et les badges suivent le sport, pas la balance.</p>'
+  +'<p class="tiny mut" style="margin:10px 0 0"><b>Tu choisis ton prénom ou ton surnom.</b> Le bloc de réglages en tête du fichier est un point de départ, pas une étiquette : tout se change dans Famille ▸ Éditer.</p>'
   +'<div class="row" style="margin-top:14px"><button class="pri" onclick="startMe()">🚴 Commencer par moi (vélo + HIIT)</button>'
   +'<button onclick="editP(null)">➕ Profil vierge</button>'
+  +'<button class="gh" onclick="quickFam(\"maman\")">👩 Maman en 1 clic</button>'
   +'<button class="gh" onclick="demoFamily()">🎲 Voir une famille de démo</button></div>'
   +'</div>'
   +'<div class="card"><h2><span>Pourquoi ça marche</span></h2>'
@@ -734,14 +771,15 @@ function vWelcome(){
   +'</div>';
 }
 function startMe(){
-  const p=newProfile("Papa","🚴","velo");
-  p.settings.pref={times:[20,30,45],int:"hiit",pool:25};
-  p.goal={metric:"kg",start:87,curr:87,target:72,startD:today(),targetD:"2027-04-30",weeklyMin:150,unit:"kg"};
+  const p=famPreset("moi");
   p.track=DEFHABITS.slice(0,3).map(h=>({key:h.k,lab:h.t}));
-  p.weights=[{date:today(),kg:87}];
   STATE.profiles.push(p);STATE.active=p.id;
-  checkLevel(p);save();render();
-  toast("🚴 Profil créé","Ajoute ta pesée du jour dans le Journal pour lancer la courbe.");
+  checkBadges(p);checkLevel(p);save();render();
+  const g=p.goal||{};
+  toast("🚴 Profil créé",(g.metric==="kg"&&g.start!=null)
+    ?g.start+" kg aujourd'hui, "+(g.target!=null?g.target+" kg le "+fmtD(g.targetD):"objectif à définir")+" · tout est modifiable dans Famille ▸ Éditer"
+    :"Ajoute ta pesée du jour dans le Journal pour lancer la courbe.");
+  editP(p.id);
 }
 function vToday(p){
   const x=xpOf(p), i=lvlOf(x), ni=Math.min(i+1,9);
@@ -1242,9 +1280,9 @@ function vFam(){
 
   +'<div class="card"><h2><span>🔔 Rappel doux</span></h2>'
   +'<p class="tiny mut" style="margin:0 0 8px">Optionnel, et honnête : la notification ne sort que si l\'app est ouverte dans le navigateur. Un clin d\'œil, pas une flic.</p>'
-  +'<div class="row"><input type="time" id="rem" value="'+((ap().settings&&ap().settings.remind)||"19:00")+'" style="width:120px">'
+  +'<div class="row"><input type="time" id="rem" value="'+(((ap()||{}).settings&&ap().settings.remind)||"19:00")+'" style="width:120px">'
   +'<button class="sm" onclick="armReminder()">Activer</button><button class="sm gh" onclick="clearReminder()">Couper</button>'
-  +'<span class="tiny mut">'+(ap().settings&&ap().settings.remind?"réglé à "+ap().settings.remind:"désactivé")+'</span></div></div>';
+  +'<span class="tiny mut">'+(((ap()||{}).settings)&&ap().settings.remind?"réglé à "+ap().settings.remind:"désactivé")+'</span></div></div>';
 }
 function installHelp(){
   const secure=location.protocol==="https:";
@@ -1264,18 +1302,21 @@ function installHelp(){
 /* ============================================================ ÉDITEUR */
 function editP(id){
   const p=id?STATE.profiles.find(function(x){return x.id===id;}):null;
-  ED={id:id||null,fresh:!p,profile:p?JSON.parse(JSON.stringify(p)):newProfile("Nouveau profil","⭐","velo")};
+  ED={id:id||null,fresh:!p,sugs:[],profile:p?JSON.parse(JSON.stringify(p)):newProfile("","⭐","velo")};
   drawEditor();
 }
 function closeEd(){document.getElementById("modal").innerHTML="";ED=null;}
 function drawEditor(){
   const p=ED.profile, pr=p.settings.pref||{times:[30,45,60],int:"mix",pool:25}, g=p.goal||{};
   const on=ED.fresh?DEFHABITS.slice(0,3).map(function(h){return h.k;}):(p.track||[]).map(function(t){return t.key;});
+  var sugs=[].concat(ED.sugs||[],STATE.profiles.map(function(x){return x.name;}),Object.keys(PRESET_FAM).map(function(k){return PRESET_FAM[k].name;}),[PROFIL_DEFAUT.name,p.name]).filter(function(n,j,a){return n&&n.length<=18&&n.indexOf('<')<0&&n.indexOf('"')<0&&a.indexOf(n)===j;}).slice(0,6);
   document.getElementById("modal").innerHTML='<div class="modal"><div class="box">'
   +'<h2 style="margin:0 0 3px;font-size:16px">'+(ED.fresh?"Nouveau profil":"Éditer · "+esc(p.name))+'</h2>'
   +'<p class="tiny mut" style="margin:0 0 12px">Chacun son sport, ses séances, son objectif, son historique.</p>'
-  +'<div class="grid g2"><div><label class="f">Prénom</label><input id="e-name" value="'+esc(p.name)+'"></div>'
-  +'<div><label class="f">Sport principal</label><select id="e-sport">'+Object.keys(SPORTS).map(function(k){return '<option value="'+k+'"'+(p.sport===k?" selected":"")+'>'+SPORTS[k].emoji+" "+SPORTS[k].name+'</option>';}).join("")+'</select></div></div>'
+  +'<div><label class="f">Prénom ou surnom</label><input id="e-name" value="'+esc(p.name)+'" placeholder="Comment tu t’appelles ?"><p class="tiny mut" style="margin:4px 0 0">Personne n’est obligé de s’appeler « Maman » ni « Papa » : ton prénom, ton surnom, « Coco », ce que tu veux.</p>'
+  +(sugs.length?'<div class="sw" id="e-names" style="margin-top:5px">'+sugs.map(function(n){return "<div>"+esc(n)+"</div>";}).join("")+'</div>':'')
+  +'</div>'
+  +'<div class="grid g2"><div><label class="f">Sport principal</label><select id="e-sport">'+Object.keys(SPORTS).map(function(k){return '<option value="'+k+'"'+(p.sport===k?" selected":"")+'>'+SPORTS[k].emoji+" "+SPORTS[k].name+'</option>';}).join("")+'</select></div></div>'
   +'<label class="f">Avatar</label><div class="emos" id="e-em">'+EMOJIS.map(function(e){return '<span class="'+(p.emoji===e?"on":"")+'" data-e="'+e+'">'+e+'</span>';}).join("")+'</div>'
 
   +'<div class="hr"></div><div class="tiny mut" style="font-weight:800;text-transform:uppercase;letter-spacing:.5px">🎿 Préférences de séances</div>'
@@ -1293,7 +1334,7 @@ function drawEditor(){
   +'<div><label class="f">Objectif</label><input type="number" step="0.1" id="e-target" value="'+(g.target==null?"":g.target)+'" inputmode="decimal"></div>'
   +'<div><label class="f">Début</label><input type="date" id="e-startd" value="'+(g.startD||today())+'"></div>'
   +'<div><label class="f">Échéance</label><input type="date" id="e-targetd" value="'+(g.targetD||"2027-04-30")+'"></div></div>'
-  +'<p class="tiny mut" style="margin:8px 0 0">Pour −15 kg en 7 mois, vise environ 0,5 kg par semaine : c\'est lent, c\'est ennuyeux, et c\'est ce qui marche.</p>'
+  +'<p class="tiny mut" style="margin:8px 0 0">Pour −15 kg en 7 mois, vise environ 0,5 kg par semaine : c\'est lent, c\'est ennuyeux, et c\'est ce qui marche.<span id="ehint" class="tiny" style="color:var(--sky)"></span></p>'
 
   +'<div class="hr"></div><div class="tiny mut" style="font-weight:800;text-transform:uppercase;letter-spacing:.5px">🥗 Habitudes quotidiennes</div>'
   +'<p class="tiny mut" style="margin:4px 0 6px">Aucun aliment interdit, rien à noter dans une appli. On coche, c\'est tout. Trois règles suffisent largement.</p>'
@@ -1313,7 +1354,45 @@ function drawEditor(){
   +'</div></div>';
   document.querySelectorAll("#e-em span").forEach(function(el){el.onclick=function(){document.querySelectorAll("#e-em span").forEach(function(z){z.classList.remove("on");});el.classList.add("on");};});
   document.querySelectorAll("#e-times .chip").forEach(function(el){el.onclick=function(){el.classList.toggle("onw");};});
+  document.querySelectorAll("#e-names div").forEach(function(el,i){var n=(sugs[i]||"").toLowerCase();el.className="chip"+(n&&(sugs[i]===p.name||n===String(p.name).toLowerCase())?" onw":"");el.setAttribute("data-who",sugs[i]);el.onclick=function(){var f=document.getElementById("e-name");if(f)f.value=el.getAttribute("data-who");};});
+  ["e-metric","e-start","e-curr","e-target","e-startd","e-targetd"].forEach(function(id){
+    const e=document.getElementById(id);if(e)e.addEventListener("input",kgHint);
+    if(e)e.addEventListener("change",kgHint);
+  });
+  kgHint();
   document.querySelectorAll("#e-int .chip").forEach(function(el){el.onclick=function(){document.querySelectorAll("#e-int .chip").forEach(function(z){z.classList.remove("onw");});el.classList.add("onw");};});
+}
+function quickFam(k){
+  const preset=PRESET_FAM[k];
+  if(!preset){editP(null);return;}
+  const np=newProfile(preset.name,preset.emoji,preset.sport);
+  np.settings.pref.times=preset.times.slice();np.settings.pref.int=preset.int;
+  np.goal.weeklyMin=preset.weeklyMin;
+  np.goal.metric="kg";
+  np.goal.start=null;np.goal.curr=null;np.goal.target=null;np.goal.unit=np.goal.metric;
+  np.name="";
+  ED={id:null,profile:np,fresh:true,sugs:[preset.name].concat(Object.keys(PRESET_FAM).map(function(k){return PRESET_FAM[k].name;})).concat([PROFIL_DEFAUT.name])};
+  drawEditor();
+  toast("🎯 Préréglage "+preset.name,"Écris ton prénom où tu veux : Maman, ton prénom, un surnom. Poids non demandé : choisis « Perdre du poids (kg) » dans Objectif si tu veux le suivre.");
+}
+function kgHint(){
+  const box=document.getElementById("ehint");if(!box)return;
+  const gv=function(id){const e=document.getElementById(id);return e?e.value:"";};
+  const gn=function(id){const e=document.getElementById(id);return e&&e.value!==""?+e.value:null;};
+  const metric=gv("e-metric"),st=gn("e-start"),cu=gn("e-curr"),ta=gn("e-target"),sd=gv("e-startd"),td=gv("e-targetd");
+  if(metric!=="kg"){
+    if(ta!=null&&st!=null&&ta>st){
+      const wk=Math.max(1,Math.ceil(daysLeft(td||today())/7)),per=(ta-st)/wk;
+      box.textContent=" \u2192 "+(Math.round(per*10)/10)+" "+metric+" par semaine d'ici "+(td?fmtD(td):"—")+".";
+    } else box.textContent="";
+    return;
+  }
+  if(st==null){box.textContent=" Laisse le poids de départ vide si tu ne veux pas le suivre : l'app comptera les séances, les quêtes et les badges sans jamais regarder la balance.";return;}
+  if(cu!=null&&cu>st){box.textContent=" "+cu+" dépasse ton départ ("+st+") : la courbe partira de "+cu+" kg, pas de pénalité.";return;}
+  if(ta==null){box.textContent=" Sans objectif, l'app compte les séances mais ne trace pas de trajectoire.";return;}
+  const lost=st-ta,wk=Math.max(1,Math.ceil(daysLeft(td||today())/7)),per=lost/wk;
+  const mot=per<=0?"vise une cible un peu plus basse":(per<=0.6?"allure confortable":(per<=0.9?"allure tenable":"vise plus loin dans le temps"));
+  box.textContent=" \u2192 "+(Math.round(lost*10)/10)+" kg en "+wk+" semaine"+(wk>1?"s":"")+" = "+(Math.round(per*100)/100)+" kg/semaine · "+mot+".";
 }
 function togDemo(){
   if(!ED)return;
@@ -1328,7 +1407,13 @@ function saveEd(){
   const num=function(id){const e=document.getElementById(id);return e&&e.value!==""?+e.value:null;};
   let p=ED.fresh?ED.profile:STATE.profiles.find(function(x){return x.id===ED.id;});
   if(!p){closeEd();return;}
-  p.name=v("e-name").trim()||"Sans nom";
+  var rawName=v("e-name").trim(),mine=STATE.profiles.some(function(x){return x.id===p.id;})?p.id:null;
+  var nbad=nameProblem(rawName,mine);
+  if(nbad){var msg={empty:["Comment tu t’appelles ?","Écris ton prénom ou ton surnom — « Maman », « Julie », « Coco », ce que tu veux."],
+    long:["Un peu long, ce prénom.","18 caractères maximum, sinon le classement famille décroche."],
+    dup:["Ce prénom est déjà pris","Il y a déjà un profil « "+rawName+" ». Change l’un des deux : le duel et le classement les reconnaissent au nom."]}[nbad];
+    toast("✋ "+msg[0],msg[1]);var fe=document.getElementById("e-name");if(fe){fe.focus();if(fe.select)fe.select();}return;}
+  p.name=rawName;
   p.sport=v("e-sport");
   const em=document.querySelector("#e-em span.on");if(em)p.emoji=em.dataset.e;
   p.settings=p.settings||{};
@@ -1359,6 +1444,10 @@ function saveEd(){
   }
   if(ED.fresh){STATE.profiles.push(p);STATE.active=p.id;}
   if(p.goal.metric==="kg"&&p.goal.curr!=null&&!p.weights.some(function(w){return w.date===today();}))p.weights.push({date:today(),kg:p.goal.curr});
+  if(p.goal.metric==="kg"&&p.goal.start==null){
+    const first=wts(p)[0]||(p.weights[0]||null);
+    if(first)p.goal.start=first.kg;
+  }
   checkBadges(p);checkLevel(p);
   save();
   toast("💾 Profil enregistré",p.emoji+" "+p.name+" · "+SPORTS[p.sport].name);
@@ -1519,6 +1608,7 @@ function doImport(){
       np.goal=Object.assign({metric:"kg",start:null,curr:null,target:null,startD:today(),targetD:"2027-04-30",weeklyMin:120,unit:"kg"},np.goal||{});
       np.track=(np.track&&np.track.length)?np.track:DEFHABITS.slice(0,3).map(h=>({key:h.k,lab:h.t}));
       np.bosses=(np.bosses&&np.bosses.length)?np.bosses:(DEFBOSSES[np.sport]||DEFBOSSES.autre).map(x=>({m:x.m,t:x.t,d:x.d,x:x.x,done:false}));
+      if(np.name)np.name=suggestName(np.name);   // un ajout ne doit pas doublonner un prénom déjà ici
       STATE.profiles.push(np);added++;
     }
   });
